@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { verifySignature, HmacAlgorithm, HmacEncoding } from './hmac';
+import { recordHit } from './reviewPrompt';
 
 function getWebviewHtml(): string {
   return `<!DOCTYPE html>
@@ -95,6 +96,12 @@ export function activate(context: vscode.ExtensionContext): void {
         if (message.type !== 'verify') return;
         const result = verifySignature(message.payload, message.secret, message.algorithm, message.encoding, message.received);
         void panel.webview.postMessage({ type: 'result', computed: result.computed, matches: result.matches });
+        // A real signature was computed and compared against a
+        // received value -- fires regardless of match/mismatch since
+        // both outcomes are a genuine, non-empty verification result.
+        if (message.payload && message.secret) {
+          recordHit(context);
+        }
       });
     }),
   );
